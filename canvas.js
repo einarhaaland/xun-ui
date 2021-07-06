@@ -7,8 +7,8 @@ const DATA = {
                 "Mean Windspeed",
                 "Current",
                 "arg3",
-                "arg4",
-                "arg5"
+                "a",
+                "b"
             ],
             "position": { x: 500, y: 100}
         },
@@ -108,12 +108,6 @@ function outputBarPos(nodeIndex) {
     return {x: barProps.x, y: barProps.y};
 }
 
-/**
- * 
- * @param {*} nodeIndex Index of link target node
- * @param {*} argIndex Index of argument in target node
- * @returns returns object {x: , y: } of inputSocket in given node and argument position
- */
 function inputSocketPos(nodeIndex, argIndex) {
     socketProps = elemProperties(
         d3.selectAll('.node')
@@ -157,10 +151,6 @@ const drag = d3
 const figure = d3.select('figure')
     .classed('container', true);
 
-const svg = figure
-    .append('svg')
-    .classed('link-svg', true);
-
 const nodes = figure
     .selectAll('div')
     .data(DATA.nodes)
@@ -195,32 +185,61 @@ const argumentText = nodeArguments
     .append('span')
     .text(d => d);
 
+
+
 const outputBars = nodeContent
     .append('div')
     .classed('output-bar', true);
 
-const links = svg
-    .append('g')
-    .attr('stroke', 'white')
-    .attr('fill', 'none')
-    .selectAll('g')
+const canvas = figure
+    .selectAll('canvas')
     .data(DATA.links)
-    .join('path')
-    .attr("d", d => {
-        const s = outputBarPos(d.source);
-        const i = inputSocketPos(d.destination.node, d.destination.argument);
+    .enter()
+    .append('canvas')
+    .style('transform', d => {
+        const barPos = outputBarPos(d.source);
+        const inputPos = inputSocketPos(d.source, d.destination.argument)
+        return 'translate(' + Math.min(inputPos, barPos.x) + 'px, ' + Math.min(inputPos.y, barPos.y) + 'px)';
+    })
+    .attr('width', d => inputSocketPos(d.destination.node, d.destination.argument).x - outputBarPos(d.source).x)
+    .attr('height', d => inputSocketPos(d.destination.node, d.destination.argument).y - outputBarPos(d.source).y)
+    .classed('canvas', true)
+    .each((d, i) => {
+        const c = document.getElementsByClassName('canvas')[i];
+        const ctx = c.getContext("2d");
 
-        return `
-            M${s.x},${s.y}
-            C${cp1(s.x, i.x)},${s.y}
-             ${cp2(s.x, i.x)},${i.y}
-             ${i.x},${i.y}
-        `
+        const outPos = outputBarPos(d.source);
+        const inPos = argumentPos(d.destination.node, d.destination.argument);
+
+        const gradient = ctx.createLinearGradient(outPos.x, outPos.y, inPos.x, inPos.y);
+        gradient.addColorStop("0", "#f06eaa");
+        gradient.addColorStop("1.0", "#448ccb");
+        
+        //Bezier Control Points X    - make better
+        function calcCP1(start, end) {
+            return (start + (end - start) / 4);
+        }
+        function calcCP2(start, end) {
+            return (end - (end - start) / 4);
+        }
+
+        /*
+        Veldig buggy ved refresh. linkene kan flytte seg til høyre.
+        Reproduce ved å scrolle ned før refresh
+        flytting og scrolling påvirker
+
+        TODO:
+        sett størrelse på canvas(d => (bruke pos til arg og bar)).
+        ved dynamisk størrelse og posisjon på canvas, tegne links feil (prob pga de tegnes i localspace til canvas og ikke worldspace)
+        make links follow dragged node
+        make links dragable?
+        */
+
+        //Draw
+        ctx.beginPath();
+        ctx.moveTo(outPos.x-15, outPos.y); //15 offset to visually connect to outputBars.
+        ctx.bezierCurveTo(calcCP1(outPos.x, inPos.x), outPos.y, calcCP2(outPos.x, inPos.x), inPos.y, inPos.x, inPos.y);
+        ctx.strokeStyle = gradient;
+        ctx.lineWidth = 2;
+        ctx.stroke();
     });
-
-function cp1(start, end) {
-    return (start + (end - start) / 4);
-}
-function cp2(start, end) {
-    return (end - (end - start) / 4);
-}

@@ -10,6 +10,8 @@
   <style>
       body {
         font-family: 'Inter', sans-serif;
+        margin: 0px;
+        padding: 0px;
       }
 
       .container{
@@ -18,6 +20,13 @@
         border: 1px solid black;
         background-color: rgb(40, 39, 40);
         position:relative;
+        margin: 0px;
+      }
+
+      .link-svg {
+        position: absolute;
+        width: 100%;
+        height: 100%;
       }
 
       .node {
@@ -27,10 +36,8 @@
         border: 1px outset black;
         border-radius: 8px;
         position: absolute;
-        min-width: 150px;
-        min-height: 100px;
         overflow: hidden;
-        z-index: 1; /*place infront of canvas to be able to drag*/
+        z-index: 2;
       }
 
       .node-header {
@@ -45,23 +52,38 @@
         padding-left: 60px;
       }
 
+      .node-content {
+        position: relative;
+        margin-top: 10px;
+        margin-bottom: 10px;
+        min-height: 50px;
+        min-width: 150px;
+        line-height: 30px;
+      }
+
       .node-argument {
         color: #d9d9d9;
         font-weight: 300;
-        padding-left: 35px;
-        padding-right: 30px;
-        padding-top: 10px;
-        padding-bottom: 0px;
+      }
+
+      .input-socket{
+        position: static;
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        margin-left: 15px;
+        margin-right: 15px;
       }
 
       .output-bar {
-        background-color: #d9d9d9;
+        background-color: #f06eaa;
         border-radius: 1px;
         width: 2px;
         height: 40px;
-        float: right;
-        margin-right: 5px;
-        margin-top: 15px;
+        position: absolute;
+        right: 2px;
+        top: 50%;
+        transform: translateY(-50%);
       }
 
       .canvas {
