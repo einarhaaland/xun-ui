@@ -22,7 +22,7 @@ const DATA = {
             "ID": 2,
             "name": "Current",
             "arguments": [],
-            "position": { x: 20, y: 150}
+            "position": { x: 20, y: 200}
         }
     ],
     "links": [
@@ -69,7 +69,7 @@ function nodeProperties(nodeIndex) {
 
 /**
  * 
- * @param {*} selection d3.selectAll(<cssSelector>).filter(d => d.ID === wantedID).node()
+ * @param {*} selection d3.selectAll(<cssSelector>).filter(d => d.ID === wantedID)
  * @returns returns object {width: , height: , x: , y: , top: , bottom: , left: , right: }
  */
 function elemProperties(selection) {
@@ -84,7 +84,7 @@ function elemProperties(selection) {
  * @returns returns object {x: , y: } of argument on given argIndex in given node
  */
 function argumentPos(nodeIndex, argIndex) {
-    argProps = elemProperties(
+    const argProps = elemProperties(
         d3.selectAll('.node')
         .filter(d => d.ID === nodeIndex)
         .selectAll('.node-argument')
@@ -99,13 +99,13 @@ function argumentPos(nodeIndex, argIndex) {
  * @param {*} nodeIndex Index of link source node
  * @returns returns object {x: , y: } of outputBar in given node
  */
-function outputBarPos(nodeIndex) {
-    barProps = elemProperties(
+function outputBarProps(nodeIndex) {
+    const barProps = elemProperties(
         d3.selectAll('.node')
         .filter(d => d.ID == nodeIndex)
         .select('.output-bar')
     )
-    return {x: barProps.x, y: barProps.y};
+    return barProps;
 }
 
 /**
@@ -114,8 +114,8 @@ function outputBarPos(nodeIndex) {
  * @param {*} argIndex Index of argument in target node
  * @returns returns object {x: , y: } of inputSocket in given node and argument position
  */
-function inputSocketPos(nodeIndex, argIndex) {
-    socketProps = elemProperties(
+function inputSocketProps(nodeIndex, argIndex) {
+    const socketProps = elemProperties(
         d3.selectAll('.node')
         .filter((d,i) => {
             return d.ID == nodeIndex
@@ -124,7 +124,7 @@ function inputSocketPos(nodeIndex, argIndex) {
         .filter((d,i) => argIndex == i)
         .select('.input-socket')
     )
-    return {x: socketProps.x, y: socketProps.y};
+    return socketProps;
 }
 
 function worldToNodeSpace(nodeIndex, coord) {
@@ -137,15 +137,20 @@ function nodeToWorldSpace(nodeIndex, coord) {
 }
 
 
-function dragstarted(event) {}
+function dragstarted(event) {
+    
+}
 
 function dragged(event) {
     event.subject.position.x += event.dx;
     event.subject.position.y += event.dy;
     d3.select(this).raise().style('transform', (d) => 'translate(' + (event.subject.position.x) + 'px, ' + (event.subject.position.y) + 'px)');
+    reDrawLinks();
 }
 
-function dragended(event) {}
+function dragended(event) {
+    
+}
 
 const drag = d3
     .drag()
@@ -206,21 +211,38 @@ const links = svg
     .selectAll('g')
     .data(DATA.links)
     .join('path')
+    .attr('stroke-width', '2')
     .attr("d", d => {
-        const s = outputBarPos(d.source);
-        const i = inputSocketPos(d.destination.node, d.destination.argument);
-
+        const s = outputBarProps(d.source);
+        const i = inputSocketProps(d.destination.node, d.destination.argument);
         return `
-            M${s.x},${s.y}
-            C${cp1(s.x, i.x)},${s.y}
-             ${cp2(s.x, i.x)},${i.y}
-             ${i.x},${i.y}
+            M${s.x},${s.y + s.height/2}
+            C${cp1(s.x, i.x)},${s.y + s.height/2}
+             ${cp2(s.x, i.x)},${i.y + i.height/2}
+             ${i.x},${i.y + i.height/2}
         `
     });
 
+function reDrawLinks() {
+    svg
+    .selectAll('path')
+    .data(DATA.links)
+    .attr("d", d => {
+        const s = outputBarProps(d.source);
+        const i = inputSocketProps(d.destination.node, d.destination.argument);
+        return `
+            M${s.x},${s.y + s.height/2}
+            C${cp1(s.x, i.x)},${s.y + s.height/2}
+             ${cp2(s.x, i.x)},${i.y + i.height/2}
+             ${i.x},${i.y + i.height/2}
+        `
+    });
+}
+
+
 function cp1(start, end) {
-    return (start + (end - start) / 4);
+    return (start + Math.abs(end - start) / 3);
 }
 function cp2(start, end) {
-    return (end - (end - start) / 4);
+    return (end - Math.abs(end - start) / 3);
 }
