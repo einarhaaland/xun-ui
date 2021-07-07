@@ -43,21 +43,10 @@ const DATA = {
     ]
 }
 
-//nodePos may be redundant (and stupid:D )because of nodeProperties
 /**
  * 
- * @param {*} node int ID of node
- * @returns returns object {x: , y: } of given node
- */
-function nodePos(nodeIndex) {
-    return DATA.nodes[nodeIndex].position;
-}
-
-
-/**
- * 
- * @param {*} node int ID of node
- * @returns returns object {width: , height: , x: , y: , top: , bottom: , left: , right: }
+ * @param {*} nodeIndex Index of node
+ * @returns Returns object {width: , height: , x: , y: , top: , bottom: , left: , right: } of node
  */
 function nodeProperties(nodeIndex) {
     return (d3.selectAll('.node')
@@ -69,8 +58,8 @@ function nodeProperties(nodeIndex) {
 
 /**
  * 
- * @param {*} selection d3.selectAll(<cssSelector>).filter(d => d.ID === wantedID)
- * @returns returns object {width: , height: , x: , y: , top: , bottom: , left: , right: }
+ * @param {*} selection Selection to get properties from. Example: d3.selectAll('.nodes').filter(d => d.ID === 0)
+ * @returns Returns object {width: , height: , x: , y: , top: , bottom: , left: , right: }
  */
 function elemProperties(selection) {
     return (selection.node().getBoundingClientRect());
@@ -81,7 +70,7 @@ function elemProperties(selection) {
  * 
  * @param {*} nodeIndex Index of link destination node
  * @param {*} argIndex Index of argument in link destination node
- * @returns returns object {x: , y: } of argument on given argIndex in given node
+ * @returns Returns object {x: , y: } of argument on given argIndex in given node
  */
 function argumentPos(nodeIndex, argIndex) {
     const argProps = elemProperties(
@@ -97,7 +86,7 @@ function argumentPos(nodeIndex, argIndex) {
 /**
  * 
  * @param {*} nodeIndex Index of link source node
- * @returns returns object {x: , y: } of outputBar in given node
+ * @returns Returns object {x: , y: } of outputBar in given node
  */
 function outputBarProps(nodeIndex) {
     const barProps = elemProperties(
@@ -108,11 +97,12 @@ function outputBarProps(nodeIndex) {
     return barProps;
 }
 
+
 /**
  * 
  * @param {*} nodeIndex Index of link target node
  * @param {*} argIndex Index of argument in target node
- * @returns returns object {x: , y: } of inputSocket in given node and argument position
+ * @returns Returns object {x: , y: } of inputSocket in given node and argument position
  */
 function inputSocketProps(nodeIndex, argIndex) {
     const socketProps = elemProperties(
@@ -127,20 +117,58 @@ function inputSocketProps(nodeIndex, argIndex) {
     return socketProps;
 }
 
-function worldToNodeSpace(nodeIndex, coord) {
-    const nodePos = DATA.nodes[nodeIndex].position;
-    return {x: coord.x - nodePos.x, y: coord.y - nodePos.y};
-}
-function nodeToWorldSpace(nodeIndex, coord) {
-    const nodePos = DATA.nodes[nodeIndex].position;
-    return {x: coord.x + nodePos.x, y: coord.y + nodePos.y};
+
+/**
+ * 
+ * @param {*} start X-coordinate of start of bezier curve
+ * @param {*} end X-coordinate of end of bezier curve
+ * @returns X-coordinate of start-control-point of bezier curve
+ */
+function cp1(start, end) {
+    return (start + Math.abs(end - start) / 3);
 }
 
+/**
+ * 
+ * @param {*} start X-coordinate of start of bezier curve
+ * @param {*} end X-coordinate of end of bezier curve
+ * @returns X-coordinate of end-control-point of bezier curve
+ */
+function cp2(start, end) {
+    return (end - Math.abs(end - start) / 3);
+}
 
+/**
+ * Re-draws every link in compliance with data
+ */
+function reDrawLinks() {
+    svg
+    .selectAll('path')
+    .data(DATA.links)
+    .attr("d", d => {
+        const s = outputBarProps(d.source);
+        const i = inputSocketProps(d.destination.node, d.destination.argument);
+        return `
+            M${s.x},${s.y + s.height/2}
+            C${cp1(s.x, i.x)},${s.y + s.height/2}
+             ${cp2(s.x, i.x)},${i.y + i.height/2}
+             ${i.x},${i.y + i.height/2}
+        `
+    });
+}
+
+/**
+ * Runs once on dragstarted
+ * @param {*} event 
+ */
 function dragstarted(event) {
     
 }
 
+/**
+ * Runs whenever dx or dy is not 0 when dragging
+ * @param {*} event 
+ */
 function dragged(event) {
     event.subject.position.x += event.dx;
     event.subject.position.y += event.dy;
@@ -148,9 +176,14 @@ function dragged(event) {
     reDrawLinks();
 }
 
+/**
+ * Runs once on dragended
+ * @param {*} event 
+ */
 function dragended(event) {
     
 }
+
 
 const drag = d3
     .drag()
@@ -222,27 +255,3 @@ const links = svg
              ${i.x},${i.y + i.height/2}
         `
     });
-
-function reDrawLinks() {
-    svg
-    .selectAll('path')
-    .data(DATA.links)
-    .attr("d", d => {
-        const s = outputBarProps(d.source);
-        const i = inputSocketProps(d.destination.node, d.destination.argument);
-        return `
-            M${s.x},${s.y + s.height/2}
-            C${cp1(s.x, i.x)},${s.y + s.height/2}
-             ${cp2(s.x, i.x)},${i.y + i.height/2}
-             ${i.x},${i.y + i.height/2}
-        `
-    });
-}
-
-
-function cp1(start, end) {
-    return (start + Math.abs(end - start) / 3);
-}
-function cp2(start, end) {
-    return (end - Math.abs(end - start) / 3);
-}
