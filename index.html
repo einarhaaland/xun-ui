@@ -84,10 +84,11 @@
       }
 
       .output-bar {
-        background-color: #f06eaa;
+        background-color: #f9ad81;
         border-radius: 1px;
         width: 2px;
-        height: 40px;
+        min-height: 40px;
+        height: 100%;
         position: absolute;
         right: 2px;
         top: 50%;
@@ -99,14 +100,22 @@
         width: 10px;
       }
 
+      .drawing-path {
+        cursor: grabbing;
+      }
+
       .canvas {
         position: absolute;
       }
 
       .link {
-        fill: #d9d9d9;
-        font-weight: 300;
-        position: absolute;
+        stroke: #f9ad81;
+        stroke-width: 2;
+        fill: none;
+      }
+
+      .link-placeholder {
+        opacity: 0.5;
       }
   </style>
   <script src="https://d3js.org/d3.v7.min.js" defer></script>

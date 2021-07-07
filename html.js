@@ -142,19 +142,24 @@ function cp2(start, end) {
  * Re-draws every link in compliance with data
  */
 function reDrawLinks() {
-    svg
-    .selectAll('path')
-    .data(DATA.links)
-    .attr("d", d => {
-        const s = outputBarProps(d.source);
-        const i = inputSocketProps(d.destination.node, d.destination.argument);
-        return `
-            M${s.x},${s.y + s.height/2}
-            C${cp1(s.x, i.x)},${s.y + s.height/2}
-             ${cp2(s.x, i.x)},${i.y + i.height/2}
-             ${i.x},${i.y + i.height/2}
-        `
-    });
+    const selection = links
+        .selectAll('path')
+        .data(DATA.links);
+
+    selection.enter()
+        .append('path')
+        .classed('link', true)
+        .merge(selection)
+        .attr("d", d => {
+            const s = outputBarProps(d.source);
+            const i = inputSocketProps(d.destination.node, d.destination.argument);
+            return `
+                M${s.x},${s.y + s.height/2}
+                C${cp1(s.x, i.x)},${s.y + s.height/2}
+                ${cp2(s.x, i.x)},${i.y + i.height/2}
+                ${i.x},${i.y + i.height/2}
+            `
+        });
 }
 
 /**
@@ -185,11 +190,83 @@ function dragended(event) {
 }
 
 
+
+
+
+function outPutBarDragStart(event) {
+    const mouseX = event.sourceEvent.x;
+    const mouseY = event.sourceEvent.y;
+    const props = elemProperties(d3.select(this));
+    placeholderLink
+        .data([{start: props, end: {x: mouseX, y: mouseY, height: 0}}])
+        .style('visibility', 'visible')
+        .attr("d", d => {
+            const s = d.start;
+            const i = d.end;
+            
+            return `
+                M${s.x},${s.y + s.height/2}
+                C${cp1(s.x, i.x)},${s.y + s.height/2}
+                ${cp2(s.x, i.x)},${i.y + i.height/2}
+                ${i.x},${i.y + i.height/2}
+            `
+        });
+}
+function outPutBarDragged(event) {
+    const mouseX = event.sourceEvent.x;
+    const mouseY = event.sourceEvent.y;
+    const oldData = placeholderLink.data()[0];
+    const data = [{start: oldData.start, end: {x: mouseX, y: mouseY, height: 0}}];
+    placeholderLink
+        .data(data)
+        .attr("d", d => {
+            const s = d.start;
+            const i = d.end;
+            return `
+                M${s.x},${s.y + s.height/2}
+                C${cp1(s.x, i.x)},${s.y + s.height/2}
+                ${cp2(s.x, i.x)},${i.y + i.height/2}
+                ${i.x},${i.y + i.height/2}
+            `
+        });
+}
+
+function outPutBarDragEnd(event) {
+    placeholderLink.style('visibility', 'hidden');
+    const inputSocket = d3.select('.input-socket:hover');
+    if (!inputSocket.empty()) {
+        inputSocket.each(d => {
+            const newSource = event.subject.ID;
+            const newDestination = {
+                "node": d.ID,
+                "argument": d.argument
+            };
+            function notUnique(item) {
+                return item.destination.node != newDestination.node || 
+                    item.destination.argument != newDestination.argument;
+            }
+            DATA.links = DATA.links.filter(notUnique)
+            DATA.links.push({
+                "source": newSource,
+                "destination": newDestination
+            })
+        });
+        console.log(DATA.links);
+        reDrawLinks();
+    }
+}
+
 const drag = d3
     .drag()
     .on("start", dragstarted)
     .on("drag", dragged)
     .on("end", dragended);
+
+const outPutBarDrag = d3
+    .drag()
+    .on("start", outPutBarDragStart)
+    .on("drag", outPutBarDragged)
+    .on("end", outPutBarDragEnd);
 
 
 const figure = d3.select('figure')
@@ -198,6 +275,13 @@ const figure = d3.select('figure')
 const svg = figure
     .append('svg')
     .classed('link-svg', true);
+
+const placeholderLink = svg
+    .append('path')
+    .attr('id', 'placeholder-link')
+    .classed('link', true)
+    .classed('link-placeholder', true)
+    .style('visibility', 'hidden');
 
 const nodes = figure
     .selectAll('div')
@@ -219,39 +303,61 @@ const nodeContent = nodes
 
 const nodeArguments = nodeContent
     .selectAll('.node-argument')
-    .data(d => d.arguments)
+    .data(d => d.arguments.map((e,i) => ({
+        ID: d.ID, 
+        argument: i, 
+        name: e
+    })))
     .enter()
     .append('div')
-    .classed('node-argument', true)
+    .classed('node-argument', true);
 
 const inputSocket = nodeArguments
     .append('span')
     .classed('input-socket', true)
-    .style('background-color', '#448ccb')
+    .style('background-color', '#448ccb');
 
 const argumentText = nodeArguments
     .append('span')
-    .text(d => d);
+    .text(d => d.name);
 
 const outputBars = nodeContent
     .append('div')
-    .classed('output-bar', true);
+    .classed('output-bar', true)
+    .call(outPutBarDrag);
+    
+    /*.on('mousedown', function(event) {
+        const startX = event.pageX;
+        const startY = event.pageY;
+
+        const path = svg
+            .select('g')
+            .append('path')
+            .attr('stroke-width', '2');
+
+        const w = d3.select(window)
+            .on('mousemove', mousemove)
+            .on('mouseup', mouseup);
+
+        function mousemove(event) {
+            path.attr('d', function() {
+                return `
+                    M${startX},${startY}
+                    C${cp1(startX, d3.pointer(event)[0])},${startY}
+                        ${cp2(startX, d3.pointer(event)[0])},${d3.pointer(event)[1]}
+                        ${d3.pointer(event)[0]},${d3.pointer(event)[1]}
+                `
+            });
+        }
+
+        function mouseup() {
+            w.on('mousemove', null).on('mouseup', null);
+            //create data
+        }
+    });*/
 
 const links = svg
     .append('g')
-    .attr('stroke', 'white')
-    .attr('fill', 'none')
-    .selectAll('g')
-    .data(DATA.links)
-    .join('path')
-    .attr('stroke-width', '2')
-    .attr("d", d => {
-        const s = outputBarProps(d.source);
-        const i = inputSocketProps(d.destination.node, d.destination.argument);
-        return `
-            M${s.x},${s.y + s.height/2}
-            C${cp1(s.x, i.x)},${s.y + s.height/2}
-             ${cp2(s.x, i.x)},${i.y + i.height/2}
-             ${i.x},${i.y + i.height/2}
-        `
-    });
+    .attr('id', 'links');
+reDrawLinks();
+
