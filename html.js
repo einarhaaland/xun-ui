@@ -160,6 +160,8 @@ function reDrawLinks() {
                 ${i.x},${i.y + i.height/2}
             `
         });
+
+    selection.exit().remove();
 }
 
 
@@ -269,10 +271,6 @@ function outPutBarDragEnd(event) {
 }
 
 function inputSocketDragStart(event) {
-    //BUG: move link away from original point, then back to original, 
-    //      then away and the link does not disappear when dragging.
-    //BUG: path stays drawn when released outside inputsocket.
-
     const mouseX = event.sourceEvent.x;
     const mouseY = event.sourceEvent.y;
     const linkdata = DATA.links.filter(isDraggedLink);
@@ -290,7 +288,7 @@ function inputSocketDragStart(event) {
             item.destination.argument == event.subject.argument;
     }
 
-    DATA.links = DATA.links.filter(notUnique)
+    DATA.links = DATA.links.filter(notUnique);
 
     placeholderLink
         .data([{
