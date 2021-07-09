@@ -14,13 +14,14 @@
         padding: 0px;
       }
 
-      .container{
-        width: 100%;
+      .container {
+        width: 1000px;
         height: 500px;
         border: 1px solid black;
         background-color: rgb(40, 39, 40);
-        position:relative;
+        position: relative;
         margin: 0px;
+        /*transform: scale(0.5);*/
       }
 
       .link-svg {
@@ -46,12 +47,10 @@
         color: #d9d9d9;
         font-weight: 500;
         text-align: center;
-        
         padding-top: 5px;
         padding-bottom: 5px; 
         padding-right: 60px;
         padding-left: 60px;
-        
       }
 
       .node-content {
@@ -77,7 +76,6 @@
         margin-right: 15px;
         border: 3px solid transparent;
       }
-
       .input-socket:hover {
         border: 3px solid white;
         cursor: grab;
@@ -88,32 +86,27 @@
         border-radius: 1px;
         width: 2px;
         min-height: 40px;
-        height: 100%;
         position: absolute;
         right: 2px;
-        top: 50%;
-        transform: translateY(-50%);
-        cursor: grab;
+        /*top: 50%;
+        transform: translateY(-50%);*/
+        top: 4px;
+        bottom: 4px;
+        cursor: pointer;
       }
-
       .output-bar:hover {
-        width: 10px;
+        width: 5px;
       }
-
-      .drawing-path {
+      /*
+      .output-bar:active {
         cursor: grabbing;
-      }
-
-      .canvas {
-        position: absolute;
-      }
+      }*/
 
       .link {
         stroke: #f9ad81;
         stroke-width: 2;
         fill: none;
       }
-
       .link-placeholder {
         opacity: 0.5;
       }
@@ -124,6 +117,6 @@
 </head>
 
 <body>
-  <figure></figure>
+  <div id="viewport"></div>
 </body>
 </html>

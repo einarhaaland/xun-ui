@@ -162,8 +162,9 @@ function reDrawLinks() {
         });
 }
 
+
 /**
- * Runs once on dragstarted
+ * Runs once on node dragstarted
  * @param {*} event 
  */
 function dragstarted(event) {
@@ -171,7 +172,7 @@ function dragstarted(event) {
 }
 
 /**
- * Runs whenever dx or dy is not 0 when dragging
+ * Runs when dragging node
  * @param {*} event 
  */
 function dragged(event) {
@@ -182,7 +183,7 @@ function dragged(event) {
 }
 
 /**
- * Runs once on dragended
+ * Runs once on node dragended
  * @param {*} event 
  */
 function dragended(event) {
@@ -190,9 +191,10 @@ function dragended(event) {
 }
 
 
-
-
-
+/**
+ * Runs once on outputBar dragstart
+ * @param {*} event 
+ */
 function outPutBarDragStart(event) {
     const mouseX = event.sourceEvent.x;
     const mouseY = event.sourceEvent.y;
@@ -203,7 +205,6 @@ function outPutBarDragStart(event) {
         .attr("d", d => {
             const s = d.start;
             const i = d.end;
-            
             return `
                 M${s.x},${s.y + s.height/2}
                 C${cp1(s.x, i.x)},${s.y + s.height/2}
@@ -212,11 +213,19 @@ function outPutBarDragStart(event) {
             `
         });
 }
+
+/**
+ * Runs when dragging link from outputBar
+ * @param {*} event 
+ */
 function outPutBarDragged(event) {
     const mouseX = event.sourceEvent.x;
     const mouseY = event.sourceEvent.y;
     const oldData = placeholderLink.data()[0];
-    const data = [{start: oldData.start, end: {x: mouseX, y: mouseY, height: 0}}];
+    const data = [{
+        sourceNodeID: oldData.sourceNodeID, 
+        start: oldData.start, 
+        end: {x: mouseX, y: mouseY, height: 0}}];
     placeholderLink
         .data(data)
         .attr("d", d => {
@@ -231,6 +240,10 @@ function outPutBarDragged(event) {
         });
 }
 
+/**
+ * Runs once on outputBar dragend
+ * @param {*} event 
+ */
 function outPutBarDragEnd(event) {
     placeholderLink.style('visibility', 'hidden');
     const inputSocket = d3.select('.input-socket:hover');
@@ -251,10 +264,80 @@ function outPutBarDragEnd(event) {
                 "destination": newDestination
             })
         });
-        console.log(DATA.links);
         reDrawLinks();
     }
 }
+
+function inputSocketDragStart(event) {
+    //BUG: move link away from original point, then back to original, 
+    //      then away and the link does not disappear when dragging.
+    //BUG: path stays drawn when released outside inputsocket.
+
+    const mouseX = event.sourceEvent.x;
+    const mouseY = event.sourceEvent.y;
+    const linkdata = DATA.links.filter(isDraggedLink);
+    const props = elemProperties(
+        d3.selectAll('.node')
+        .filter(d => d.ID == linkdata[0].source)
+        .select('.output-bar'));
+    
+    function notUnique(item) {
+        return item.destination.node != event.subject.ID || 
+            item.destination.argument != event.subject.argument;
+    }
+    function isDraggedLink(item) {
+        return item.destination.node == event.subject.ID && 
+            item.destination.argument == event.subject.argument;
+    }
+
+    DATA.links = DATA.links.filter(notUnique)
+
+    placeholderLink
+        .data([{
+            sourceNodeID: linkdata[0].source,
+            start: props,
+            end: {x: mouseX, y: mouseY, height: 0}
+        }])
+        .style('visibility', 'visible')
+        .attr("d", d => {
+            const s = d.start;
+            const i = d.end;
+            return `
+                M${s.x},${s.y + s.height/2}
+                C${cp1(s.x, i.x)},${s.y + s.height/2}
+                ${cp2(s.x, i.x)},${i.y + i.height/2}
+                ${i.x},${i.y + i.height/2}
+            `
+        });
+    reDrawLinks();
+}
+function inputSocketDragged(event) {
+    //use this or outPutBarDragged?
+}
+function inputSocketDragEnd(event) {
+    placeholderLink.style('visibility', 'hidden');
+    const inputSocket = d3.select('.input-socket:hover');
+    if (!inputSocket.empty()) {
+        inputSocket.each(d => {
+            const newSource = placeholderLink.data()[0].sourceNodeID;
+            const newDestination = {
+                "node": d.ID,
+                "argument": d.argument
+            };
+            function notUnique(item) {
+                return item.destination.node != newDestination.node || 
+                    item.destination.argument != newDestination.argument;
+            }
+            DATA.links = DATA.links.filter(notUnique)
+            DATA.links.push({
+                "source": newSource,
+                "destination": newDestination
+            })
+        });
+        reDrawLinks();
+    }
+}
+
 
 const drag = d3
     .drag()
@@ -268,9 +351,26 @@ const outPutBarDrag = d3
     .on("drag", outPutBarDragged)
     .on("end", outPutBarDragEnd);
 
+const inputSocketDrag = d3
+    .drag()
+    .on("start", inputSocketDragStart)
+    .on("drag", outPutBarDragged)
+    .on("end", inputSocketDragEnd);
 
-const figure = d3.select('figure')
-    .classed('container', true);
+
+const figure = d3
+    .select('#viewport')
+    .append('div')
+    .classed('container', true)
+    .call(
+        d3.zoom()
+            .on('zoom', zoomed)
+    );
+
+function zoomed({transform}) {
+    figure.style('transform', transform);
+}
+
 
 const svg = figure
     .append('svg')
@@ -315,7 +415,8 @@ const nodeArguments = nodeContent
 const inputSocket = nodeArguments
     .append('span')
     .classed('input-socket', true)
-    .style('background-color', '#448ccb');
+    .style('background-color', '#448ccb')
+    .call(inputSocketDrag);
 
 const argumentText = nodeArguments
     .append('span')
@@ -325,36 +426,6 @@ const outputBars = nodeContent
     .append('div')
     .classed('output-bar', true)
     .call(outPutBarDrag);
-    
-    /*.on('mousedown', function(event) {
-        const startX = event.pageX;
-        const startY = event.pageY;
-
-        const path = svg
-            .select('g')
-            .append('path')
-            .attr('stroke-width', '2');
-
-        const w = d3.select(window)
-            .on('mousemove', mousemove)
-            .on('mouseup', mouseup);
-
-        function mousemove(event) {
-            path.attr('d', function() {
-                return `
-                    M${startX},${startY}
-                    C${cp1(startX, d3.pointer(event)[0])},${startY}
-                        ${cp2(startX, d3.pointer(event)[0])},${d3.pointer(event)[1]}
-                        ${d3.pointer(event)[0]},${d3.pointer(event)[1]}
-                `
-            });
-        }
-
-        function mouseup() {
-            w.on('mousemove', null).on('mouseup', null);
-            //create data
-        }
-    });*/
 
 const links = svg
     .append('g')
