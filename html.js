@@ -1,3 +1,4 @@
+// DATA
 const DATA = { 
     "nodes": [
         {
@@ -43,6 +44,8 @@ const DATA = {
     ]
 }
 
+
+// HELPER FUNCTIONS
 /**
  * 
  * @param {*} nodeIndex Index of node
@@ -55,7 +58,6 @@ function nodeProperties(nodeIndex) {
         .getBoundingClientRect())
 }
 
-
 /**
  * 
  * @param {*} selection Selection to get properties from. Example: d3.selectAll('.nodes').filter(d => d.ID === 0)
@@ -64,7 +66,6 @@ function nodeProperties(nodeIndex) {
 function elemProperties(selection) {
     return (selection.node().getBoundingClientRect());
 }
-
 
 /**
  * 
@@ -82,7 +83,6 @@ function argumentPos(nodeIndex, argIndex) {
     return {x: argProps.x, y: argProps.y};
 }
 
-
 /**
  * 
  * @param {*} nodeIndex Index of link source node
@@ -96,7 +96,6 @@ function outputBarProps(nodeIndex) {
     )
     return barProps;
 }
-
 
 /**
  * 
@@ -127,7 +126,6 @@ function inputSocketProps(nodeIndex, argIndex) {
 function cp1(start, end) {
     return (start + Math.abs(end - start) / 3);
 }
-
 /**
  * 
  * @param {*} start X-coordinate of start of bezier curve
@@ -137,6 +135,7 @@ function cp1(start, end) {
 function cp2(start, end) {
     return (end - Math.abs(end - start) / 3);
 }
+
 
 /**
  * Re-draws every link in compliance with data
@@ -165,6 +164,7 @@ function reDrawLinks() {
 }
 
 
+// DRAG FUNCTIONS
 /**
  * Runs once on node dragstarted
  * @param {*} event 
@@ -172,7 +172,6 @@ function reDrawLinks() {
 function dragstarted(event) {
     
 }
-
 /**
  * Runs when dragging node
  * @param {*} event 
@@ -183,7 +182,6 @@ function dragged(event) {
     d3.select(this).raise().style('transform', (d) => 'translate(' + (event.subject.position.x) + 'px, ' + (event.subject.position.y) + 'px)');
     reDrawLinks();
 }
-
 /**
  * Runs once on node dragended
  * @param {*} event 
@@ -215,7 +213,6 @@ function outPutBarDragStart(event) {
             `
         });
 }
-
 /**
  * Runs when dragging link from outputBar
  * @param {*} event 
@@ -241,7 +238,6 @@ function outPutBarDragged(event) {
             `
         });
 }
-
 /**
  * Runs once on outputBar dragend
  * @param {*} event 
@@ -310,7 +306,7 @@ function inputSocketDragStart(event) {
     reDrawLinks();
 }
 function inputSocketDragged(event) {
-    //use this or outPutBarDragged?
+    //merge with outPutBarDragged to create linkDragged?
 }
 function inputSocketDragEnd(event) {
     placeholderLink.style('visibility', 'hidden');
@@ -337,6 +333,7 @@ function inputSocketDragEnd(event) {
 }
 
 
+// DRAG INITIATORS
 const drag = d3
     .drag()
     .on("start", dragstarted)
@@ -356,19 +353,11 @@ const inputSocketDrag = d3
     .on("end", inputSocketDragEnd);
 
 
+//DOM STRUCTURE
 const figure = d3
     .select('#viewport')
     .append('div')
-    .classed('container', true)
-    .call(
-        d3.zoom()
-            .on('zoom', zoomed)
-    );
-
-function zoomed({transform}) {
-    figure.style('transform', transform);
-}
-
+    .classed('container', true);
 
 const svg = figure
     .append('svg')
