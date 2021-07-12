@@ -159,7 +159,6 @@ function reDrawLinks() {
                 ${i.x},${i.y + i.height/2}
             `
         });
-
     selection.exit().remove();
 }
 
@@ -355,7 +354,7 @@ const inputSocketDrag = d3
     .on("end", inputSocketDragEnd);
 
 
-//DOM STRUCTURE
+// DOM STRUCTURE
 const figure = d3
     .select('#viewport')
     .append('div')
@@ -363,7 +362,8 @@ const figure = d3
 
 const svg = figure
     .append('svg')
-    .classed('link-svg', true);
+    .classed('link-svg', true)
+    .on('contextmenu', contextMenu);
 
 const placeholderLink = svg
     .append('path')
@@ -388,7 +388,7 @@ const nodeHeaders = nodes
 
 const nodeContent = nodes
     .append('div')
-    .classed('node-content', true)
+    .classed('node-content', true);
 
 const nodeArguments = nodeContent
     .selectAll('.node-argument')
@@ -421,3 +421,58 @@ const links = svg
     .attr('id', 'links');
 reDrawLinks();
 
+function contextMenu(event) {
+    event.preventDefault();
+    const mouseX = event.pageX;
+    const mouseY = event.pageY;
+
+    d3.select('.context-menu').remove();
+
+    const menu = figure
+        .append('div')
+        .classed('context-menu', true)
+        .style('left', mouseX + 'px')
+        .style('top', mouseY + 'px');
+
+    const menuHeaders = menu
+        .selectAll('menu-header')
+        .data(['Add New Node'])
+        .enter()
+        .append('span')
+        .text(d => d)
+        .classed('menu-header', true);
+
+    const entries = menu
+        .selectAll('menu-entry')
+        .data(['Function 1', 'Function 2'])
+        .enter()
+        .append('span')
+        .classed('menu-entry', true)
+        .text(d => d)
+        .on('mouseup', (d, event) => addNode(d, event));
+
+    d3.select('body').on('click', (event) => d3.select('.context-menu').remove());
+}
+
+function addNode(event, d) {
+    DATA.nodes.push(
+        {
+            "ID": DATA.nodes.length,
+            "name": d,
+            "arguments": [],
+            "position": { x: event.pageX, y: event.pageY}
+        }
+    )
+    drawNodes();
+}
+
+function drawNodes() {
+    //TODO:
+    //flytt alt nodetegning inn her
+    //call denne for å tegne noder første gang
+    //call denne for å tegne når lagt til
+    //se på hvordan links blir tegnet
+
+
+    //selection.exit().remove();
+}
