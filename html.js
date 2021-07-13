@@ -89,6 +89,7 @@ function argumentPos(nodeIndex, argIndex) {
  * @returns Returns object {x: , y: } of outputBar in given node
  */
 function outputBarProps(nodeIndex) {
+
     const barProps = elemProperties(
         d3.selectAll('.node')
         .filter(d => d.ID == nodeIndex)
@@ -145,6 +146,24 @@ function reDrawLinks() {
         .selectAll('path')
         .data(DATA.links);
 
+
+    selection.join(
+        enter => enter
+            .append('path')
+            .classed('link', true),
+        update => update,
+        exit => exit.remove()
+    ).attr("d", d => {
+        const s = outputBarProps(d.source);
+        const i = inputSocketProps(d.destination.node, d.destination.argument);
+        return `
+            M${s.x},${s.y + s.height/2}
+            C${cp1(s.x, i.x)},${s.y + s.height/2}
+            ${cp2(s.x, i.x)},${i.y + i.height/2}
+            ${i.x},${i.y + i.height/2}
+        `
+    });
+/*
     selection.enter()
         .append('path')
         .classed('link', true)
@@ -159,7 +178,7 @@ function reDrawLinks() {
                 ${i.x},${i.y + i.height/2}
             `
         });
-    selection.exit().remove();
+    selection.exit().remove();*/
 }
 
 
@@ -178,7 +197,8 @@ function dragstarted(event) {
 function dragged(event) {
     event.subject.position.x += event.dx;
     event.subject.position.y += event.dy;
-    d3.select(this).raise().style('transform', (d) => 'translate(' + (event.subject.position.x) + 'px, ' + (event.subject.position.y) + 'px)');
+    //d3.select(this).raise().style('transform', (d) => 'translate(' + (event.subject.position.x) + 'px, ' + (event.subject.position.y) + 'px)');
+    d3.select(this).style('transform', (d) => 'translate(' + (event.subject.position.x) + 'px, ' + (event.subject.position.y) + 'px)');
     reDrawLinks();
 }
 /**
@@ -372,6 +392,8 @@ const placeholderLink = svg
     .classed('link-placeholder', true)
     .style('visibility', 'hidden');
 
+
+/*
 const nodes = figure
     .selectAll('div')
     .data(DATA.nodes)
@@ -416,6 +438,9 @@ const outputBars = nodeContent
     .classed('output-bar', true)
     .call(outPutBarDrag);
 
+*/
+drawNodes();
+
 const links = svg
     .append('g')
     .attr('id', 'links');
@@ -449,30 +474,82 @@ function contextMenu(event) {
         .append('span')
         .classed('menu-entry', true)
         .text(d => d)
-        .on('mouseup', (d, event) => addNode(d, event));
+        .on('mouseup', (d, event) => addNode(d, event, mouseX, mouseY));
 
     d3.select('body').on('click', (event) => d3.select('.context-menu').remove());
 }
 
-function addNode(event, d) {
+function addNode(event, d, posX, posY) {
     DATA.nodes.push(
         {
             "ID": DATA.nodes.length,
             "name": d,
-            "arguments": [],
-            "position": { x: event.pageX, y: event.pageY}
+            "arguments": ["arg1", "arg2"],
+            "position": { x: posX, y: posY}
         }
     )
     drawNodes();
 }
 
 function drawNodes() {
-    //TODO:
-    //flytt alt nodetegning inn her
-    //call denne for å tegne noder første gang
-    //call denne for å tegne når lagt til
-    //se på hvordan links blir tegnet
+    const nodes = figure
+        .selectAll('.node')
+        .data(DATA.nodes)
+        .enter()
+        .append('div')
+        .classed('node', true)
+        .style('transform', d => 'translate(' + d.position.x + 'px ,' + d.position.y + 'px)')
+        .sort(d => d.ID)
+        .call(drag);
+    
+/*
+    nodes.join(
+            enter => enter.append('div').classed('node', true),
+            update => update.data(DATA.nodes, d => d.ID).style('transform', d => 'translate(' + d.position.x + 'px ,' + d.position.y + 'px)'),
+            exit => exit.remove()
+        )
+        .call(drag);*/
+        
+    //lag noder append...
 
+    //select node og sett verdier
 
-    //selection.exit().remove();
+    //key function when setting data? selection.order?
+
+    const nodeHeaders = nodes
+        .append('div')
+        .classed('node-header', true)
+        .text(d => d.name);
+
+    const nodeContent = nodes
+        .append('div')
+        .classed('node-content', true);
+
+    const nodeArguments = nodeContent
+        .selectAll('.node-argument')
+        .data(d => d.arguments.map((e,i) => ({
+            ID: d.ID, 
+            argument: i, 
+            name: e
+        })))
+        .enter()
+        .append('div')
+        .classed('node-argument', true);
+
+    const inputSocket = nodeArguments
+        .append('span')
+        .classed('input-socket', true)
+        .style('background-color', '#448ccb')
+        .call(inputSocketDrag);
+
+    const argumentText = nodeArguments
+        .append('span')
+        .text(d => d.name);
+
+    const outputBars = nodeContent
+        .append('div')
+        .classed('output-bar', true)
+        .call(outPutBarDrag);
+
+    nodes.exit().remove();
 }
