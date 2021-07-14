@@ -163,22 +163,6 @@ function reDrawLinks() {
             ${i.x},${i.y + i.height/2}
         `
     });
-/*
-    selection.enter()
-        .append('path')
-        .classed('link', true)
-        .merge(selection)
-        .attr("d", d => {
-            const s = outputBarProps(d.source);
-            const i = inputSocketProps(d.destination.node, d.destination.argument);
-            return `
-                M${s.x},${s.y + s.height/2}
-                C${cp1(s.x, i.x)},${s.y + s.height/2}
-                ${cp2(s.x, i.x)},${i.y + i.height/2}
-                ${i.x},${i.y + i.height/2}
-            `
-        });
-    selection.exit().remove();*/
 }
 
 
@@ -197,7 +181,6 @@ function dragstarted(event) {
 function dragged(event) {
     event.subject.position.x += event.dx;
     event.subject.position.y += event.dy;
-    //d3.select(this).raise().style('transform', (d) => 'translate(' + (event.subject.position.x) + 'px, ' + (event.subject.position.y) + 'px)');
     d3.select(this).style('transform', (d) => 'translate(' + (event.subject.position.x) + 'px, ' + (event.subject.position.y) + 'px)');
     reDrawLinks();
 }
@@ -392,53 +375,6 @@ const placeholderLink = svg
     .classed('link-placeholder', true)
     .style('visibility', 'hidden');
 
-
-/*
-const nodes = figure
-    .selectAll('div')
-    .data(DATA.nodes)
-    .enter()
-    .append('div')
-    .classed('node', true)
-    .style('transform', d => 'translate(' + d.position.x + 'px ,' + d.position.y + 'px)')
-    .call(drag);
-
-const nodeHeaders = nodes
-    .append('div')
-    .classed('node-header', true)
-    .text(d => d.name);
-
-const nodeContent = nodes
-    .append('div')
-    .classed('node-content', true);
-
-const nodeArguments = nodeContent
-    .selectAll('.node-argument')
-    .data(d => d.arguments.map((e,i) => ({
-        ID: d.ID, 
-        argument: i, 
-        name: e
-    })))
-    .enter()
-    .append('div')
-    .classed('node-argument', true);
-
-const inputSocket = nodeArguments
-    .append('span')
-    .classed('input-socket', true)
-    .style('background-color', '#448ccb')
-    .call(inputSocketDrag);
-
-const argumentText = nodeArguments
-    .append('span')
-    .text(d => d.name);
-
-const outputBars = nodeContent
-    .append('div')
-    .classed('output-bar', true)
-    .call(outPutBarDrag);
-
-*/
 drawNodes();
 
 const links = svg
@@ -501,20 +437,6 @@ function drawNodes() {
         .style('transform', d => 'translate(' + d.position.x + 'px ,' + d.position.y + 'px)')
         .sort(d => d.ID)
         .call(drag);
-    
-/*
-    nodes.join(
-            enter => enter.append('div').classed('node', true),
-            update => update.data(DATA.nodes, d => d.ID).style('transform', d => 'translate(' + d.position.x + 'px ,' + d.position.y + 'px)'),
-            exit => exit.remove()
-        )
-        .call(drag);*/
-        
-    //lag noder append...
-
-    //select node og sett verdier
-
-    //key function when setting data? selection.order?
 
     const nodeHeaders = nodes
         .append('div')
