@@ -326,11 +326,13 @@ function inputSocketDragEnd(event) {
                 return item.destination.node != newDestination.node || 
                     item.destination.argument != newDestination.argument;
             }
-            DATA.links = DATA.links.filter(notUnique)
-            DATA.links.push({
-                "source": newSource,
-                "destination": newDestination
-            })
+            if (newSource != newDestination.node) {
+                DATA.links = DATA.links.filter(notUnique)
+                DATA.links.push({
+                    "source": newSource,
+                    "destination": newDestination
+                })
+            }
         });
         reDrawLinks();
     }
